@@ -1,0 +1,52 @@
+.services-layout {
+  display: flex;
+  gap: 28px;
+  margin-top: 28px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.filters {
+  width: 220px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.service-results {
+  flex: 1;
+  min-width: 300px;
+  margin-top: 0;
+}
+
+.service-card h3 {
+  margin-top: 14px;
+  font-size: 17px;
+}
+
+.service-card p {
+  margin-top: 4px;
+}
+
+.empty-msg {
+  flex: 1;
+  min-width: 300px;
+  padding: 40px 0;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .services-layout {
+    gap: 20px;
+  }
+
+  .filters {
+    width: 100%;
+  }
+}

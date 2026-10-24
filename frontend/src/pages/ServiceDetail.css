@@ -1,0 +1,45 @@
+.detail-layout {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.detail-main {
+  flex: 2;
+  min-width: 320px;
+}
+
+.detail-booking {
+  flex: 1;
+  min-width: 280px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 20px;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.review-card {
+  margin-top: 14px;
+}
+
+.success-box {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .detail-main,
+  .detail-booking {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+}

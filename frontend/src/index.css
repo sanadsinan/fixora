@@ -1,0 +1,342 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap");
+
+/* ---------- Base ---------- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  color: #0f172a;
+  background: #f5f8ff;
+}
+
+h1,h2,h3,p {
+  margin: 0;
+}
+
+a {
+  color: #1d4ed8;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ---------- Navbar ---------- */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 48px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5eaf5;
+}
+
+.nav a {
+  color: #334155;
+  text-decoration: none;
+  margin-left: 24px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.nav a.logo {
+  font-weight: 800;
+  font-size: 30px;
+  color: #1d4ed8 !important;
+  letter-spacing: -0.02em;
+  margin: 0 !important;
+}
+
+.lf {
+  color: #0f172a;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: #1d4ed8;
+  color: #ffffff !important;
+  font-weight: 600;
+  font-size: 15px;
+  border: 0;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(29, 78, 216, 0.25);
+}
+
+.btn2 {
+  background: #ffffff;
+  color: #1d4ed8 !important;
+  border: 1px solid #bfdbfe;
+  box-shadow: none;
+}
+
+/* ---------- Layout ---------- */
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 48px;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e5eaf5;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.m {
+  color: #475569;
+  font-size: 14px;
+}
+
+/* ---------- Forms ---------- */
+.in {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid #d5ddee;
+  border-radius: 12px;
+  font-size: 15px;
+  margin-top: 6px;
+  background: #ffffff;
+  font-family: inherit;
+}
+
+label {
+  font-size: 14px;
+  font-weight: 600;
+  display: block;
+  margin-top: 14px;
+}
+
+/* ---------- Placeholder image box ---------- */
+.ph {
+  background: #dbeafe;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1e40af;
+  font-size: 13px;
+}
+
+/* ---------- Status badges ---------- */
+.b {
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.w {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.x {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ---------- Tables ---------- */
+.tw {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+td,
+th {
+  padding: 14px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eef2fa;
+  font-size: 14px;
+}
+
+th {
+  color: #475569;
+  font-weight: 600;
+}
+
+/* ---------- Dashboard sidebar ---------- */
+.side {
+  display: flex;
+  min-height: 640px;
+}
+
+.sb {
+  width: 230px;
+  background: #0f1e4a;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sb a {
+  color: #e2e8f0;
+  text-decoration: none;
+  padding: 11px 14px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
+.sb a.on {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.sb .logo {
+  color: #60a5fa !important;
+  font-size: 28px !important;
+}
+
+.sb .lf {
+  color: #ffffff;
+}
+
+/* ---------- Footer ---------- */
+.ft {
+  padding: 28px 48px;
+  background: #0f1e4a;
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+/* ---------- Page structure ---------- */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app main {
+  flex: 1;
+}
+
+/* ---------- Hover effects ---------- */
+
+/* Navbar menu links */
+.nav a {
+  transition: color 0.2s;
+}
+
+.nav a:hover {
+  color: #1d4ed8;
+}
+
+/* Buttons */
+.btn {
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.btn:hover {
+  background: #1e40af;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(29, 78, 216, 0.3);
+}
+
+/* White outline buttons */
+.btn2:hover {
+  background: #eff6ff;
+  box-shadow: none;
+}
+
+/* Sidebar options (dashboards) */
+.sb a {
+  transition: background 0.2s;
+}
+
+.sb a:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sb a.on:hover {
+  background: #1d4ed8;
+}
+
+/* ---------- Navbar menu button ---------- */
+.menu-toggle {
+  display: none;
+  background: none;
+  border: 0;
+  font-size: 26px;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+}
+
+/* ---------- Phones and small tablets ---------- */
+@media (max-width: 768px) {
+  .nav {
+    padding: 12px 20px;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  .nav-links {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding-top: 8px;
+  }
+
+  .nav-links.open {
+    display: flex;
+  }
+
+  .nav .nav-links a {
+    margin-left: 0;
+    padding: 12px 4px;
+  }
+
+  .nav .nav-links a.btn {
+    margin-top: 6px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .wrap {
+    padding: 24px 20px;
+  }
+
+  .ft {
+    padding: 24px 20px;
+  }
+
+  .sb {
+    width: 100%;
+  }
+}
