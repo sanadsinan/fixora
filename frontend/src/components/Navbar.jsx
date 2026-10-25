@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
+
+// NavLink tells us if this link is the current page
+const linkClass = ({ isActive }) => (isActive ? "active" : "");
 
 function Navbar() {
   const [open, setOpen] = useState(false);
@@ -20,11 +23,21 @@ function Navbar() {
       </button>
 
       <div className={open ? "nav-links open" : "nav-links"}>
-        <Link to="/" onClick={close}>Home</Link>
-        <Link to="/services" onClick={close}>Services</Link>
-        <Link to="/about" onClick={close}>About</Link>
-        <Link to="/login" onClick={close}>Login</Link>
-        <Link className="btn" to="/register" onClick={close}>Sign up</Link>
+        <NavLink to="/" end className={linkClass} onClick={close}>
+          Home
+        </NavLink>
+        <NavLink to="/services" className={linkClass} onClick={close}>
+          Services
+        </NavLink>
+        <NavLink to="/about" className={linkClass} onClick={close}>
+          About
+        </NavLink>
+        <NavLink to="/login" className={linkClass} onClick={close}>
+          Login
+        </NavLink>
+        <Link className="btn" to="/register" onClick={close}>
+          Sign up
+        </Link>
       </div>
     </div>
   );
