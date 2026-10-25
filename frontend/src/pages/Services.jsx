@@ -9,7 +9,8 @@ function Services() {
 
   const [searchText, setSearchText] = useState(params.get("service") || "");
   const [query, setQuery] = useState(params.get("service") || "");
-  const [selectedCategories, setSelectedCategories] = useState([]);
+  const categoryFromAddress = params.get("category");
+  const [selectedCategories, setSelectedCategories] = useState(categoryFromAddress ? [categoryFromAddress] : []);
   const [location, setLocation] = useState(params.get("location") || "");
   const [minRating, setMinRating] = useState(0);
 

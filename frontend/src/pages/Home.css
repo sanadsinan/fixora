@@ -131,3 +131,17 @@
     flex-basis: 260px;
   }
 }
+
+/* ---------- Clickable category cards ---------- */
+.category-card {
+  display: block;
+  color: #0f172a;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.category-card:hover {
+  transform: translateY(-4px);
+  border-color: #93c5fd;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+}

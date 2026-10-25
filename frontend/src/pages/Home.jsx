@@ -80,9 +80,13 @@ function Home() {
         <h2>Popular categories</h2>
         <div className="grid" style={{ marginTop: 20 }}>
           {categories.map((name) => (
-            <div className="card" key={name}>
+            <Link
+              className="card category-card"
+              key={name}
+              to={`/services?category=${encodeURIComponent(name)}`}
+            >
               <h3>{name}</h3>
-            </div>
+            </Link>
           ))}
         </div>
 
