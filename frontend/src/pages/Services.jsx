@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { providers, categories } from "../data/Providers";
+import { providers, categories } from "../data/providers";
 import "./Services.css";
 
 function Services() {

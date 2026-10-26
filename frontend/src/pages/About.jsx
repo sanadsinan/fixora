@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { providers, categories } from "../data/Providers";
+import { providers, categories } from "../data/providers";
 import "./About.css";
 
 // Numbers come from our data where possible. The last two are dummy values.

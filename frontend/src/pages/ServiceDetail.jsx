@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { providers, reviews } from "../data/Providers";
+import { providers, reviews } from "../data/providers";
 import "./ServiceDetail.css";
 
 function ServiceDetail() {
