@@ -1,12 +1,14 @@
 import { NavLink, Link, Outlet } from "react-router-dom";
 import "./DashboardLayout.css";
 
+// "out: true" marks the Log out button, which has its own style
 const menus = {
   provider: [
     { label: "Dashboard", to: "/provider", end: true },
     { label: "My services", to: "/provider/services" },
+    { label: "Booking requests", to: "/provider/requests" },
     { label: "Profile", to: "/provider/profile" },
-    { label: "Log out", to: "/login" },
+    { label: "Log out", to: "/login", out: true },
   ],
   admin: [
     { label: "Dashboard", to: "/admin", end: true },
@@ -14,7 +16,7 @@ const menus = {
     { label: "Categories", to: "/admin/categories" },
     { label: "All bookings", to: "/admin/bookings" },
     { label: "Reviews", to: "/admin/reviews" },
-    { label: "Log out", to: "/login" },
+    { label: "Log out", to: "/login", out: true },
   ],
 };
 
@@ -31,7 +33,10 @@ function DashboardLayout({ role }) {
             key={item.label}
             to={item.to}
             end={item.end}
-            className={({ isActive }) => (isActive ? "on" : "")}
+            className={({ isActive }) => {
+              if (item.out) return "out";
+              return isActive ? "on" : "";
+            }}
           >
             {item.label}
           </NavLink>

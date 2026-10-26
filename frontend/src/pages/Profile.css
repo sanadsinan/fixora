@@ -1,0 +1,31 @@
+.profile-layout {
+  display: flex;
+  gap: 28px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.profile-col {
+  flex: 1;
+  min-width: 320px;
+}
+
+.become-card {
+  border: 2px solid #1d4ed8;
+}
+
+.password-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .profile-col {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+}

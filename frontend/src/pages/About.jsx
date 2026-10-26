@@ -27,8 +27,8 @@ const reasons = [
 
 // Change these to your own names and roles
 const team = [
-  { name: "Dona Joy", role: "Frontend developer" },
-  { name: "Sanadsinan M", role: "Backend & database" },
+  { name: "Dona Joy"},
+  { name: "Sanadsinan M" },
 ];
 
 function About() {

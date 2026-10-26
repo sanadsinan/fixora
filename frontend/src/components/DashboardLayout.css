@@ -28,6 +28,21 @@
   padding: 8px 14px;
 }
 
+/* Log out button at the bottom of the sidebar */
+.sb a.out {
+  margin-top: auto;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  padding: 11px 14px;
+  color: #ffffff;
+  background: transparent;
+}
+
+.sb a.out:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 @media (max-width: 768px) {
   .side {
     flex-direction: column;
@@ -43,6 +58,11 @@
 
   .sb a {
     white-space: nowrap;
+  }
+
+  .sb a.out {
+    margin-top: 0;
+    margin-left: auto;
   }
 
   .sb .logo {
