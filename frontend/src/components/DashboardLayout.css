@@ -43,6 +43,22 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tab-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+
 @media (max-width: 768px) {
   .side {
     flex-direction: column;

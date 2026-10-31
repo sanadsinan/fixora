@@ -1,0 +1,47 @@
+.search-input {
+  max-width: 360px;
+  margin-top: 16px;
+}
+
+.filter-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-row .in {
+  max-width: 200px;
+  margin: 0;
+}
+
+.cat-layout {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.cat-main {
+  flex: 2;
+  min-width: 340px;
+}
+
+.cat-form {
+  flex: 1;
+  min-width: 280px;
+  margin-top: 52px;
+}
+
+@media (max-width: 768px) {
+  .cat-main,
+  .cat-form {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  .cat-form {
+    margin-top: 0;
+  }
+}

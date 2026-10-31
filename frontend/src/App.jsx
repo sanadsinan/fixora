@@ -12,6 +12,13 @@ import ServiceDetail from "./pages/ServiceDetail";
 import Bookings from "./pages/Bookings";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import ProviderServices from "./pages/ProviderServices";
+import ProviderRequests from "./pages/ProviderRequests";
+import ProviderProfile from "./pages/ProviderProfile";
+import AdminUsers from "./pages/AdminUsers";
+import AdminCategories from "./pages/AdminCategories";
+import AdminBookings from "./pages/AdminBookings";
+import AdminReviews from "./pages/AdminReviews";
 
 function App() {
   return (
@@ -27,6 +34,13 @@ function App() {
         <Route path="/bookings" element={<Bookings />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/change-password" element={<ChangePassword />} />
+        <Route path="/provider/services" element={<ProviderServices />} />
+        <Route path="/provider/requests" element={<ProviderRequests />} />
+        <Route path="/provider/profile" element={<ProviderProfile />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/categories" element={<AdminCategories />} />
+        <Route path="/admin/bookings" element={<AdminBookings />} />
+        <Route path="/admin/reviews" element={<AdminReviews />} />
       </Route>
 
       {/* Provider pages: sidebar */}

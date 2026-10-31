@@ -1,0 +1,43 @@
+.service-form {
+  max-width: 560px;
+  margin-top: 28px;
+}
+
+.pp-layout {
+  display: flex;
+  gap: 28px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.pp-main {
+  flex: 2;
+  min-width: 320px;
+}
+
+.pp-side {
+  flex: 1;
+  min-width: 260px;
+}
+
+.avatar-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.avatar-lg {
+  width: 88px;
+  height: 88px;
+  flex: none;
+  border-radius: 50%;
+}
+
+@media (max-width: 768px) {
+  .pp-main,
+  .pp-side {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+}
