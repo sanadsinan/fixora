@@ -88,4 +88,13 @@
   .dash-content {
     padding: 20px;
   }
+
+    .tw td,
+  .tw th {
+    white-space: nowrap;
+  }
+
+  .page-head h1 {
+    font-size: 22px !important;
+  }
 }
