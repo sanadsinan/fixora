@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { providers, categories } from "../data/providers";
+import { categories } from "../data/providers";
+import { useProviders } from "../context/ProvidersContext";
+import ServiceIllustration from "../components/ServiceIllustration";
 import "./Services.css";
 
 function Services() {
   // Reads words sent from the Home page search bar (?service=...&location=...)
+  const { providers } = useProviders();
   const [params] = useSearchParams();
 
   const [searchText, setSearchText] = useState(params.get("service") || "");
@@ -128,9 +131,7 @@ function Services() {
           <div className="grid service-results">
             {filtered.map((p) => (
               <div className="card service-card" key={p.id}>
-                <div className="ph" style={{ height: 130 }}>
-                  Service photo
-                </div>
+                <ServiceIllustration id={p.illustration} service={p.service} height={130} />
                 <h3>{p.name}</h3>
                 <p className="m">
                   {p.service} · {p.location}

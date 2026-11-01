@@ -26,6 +26,12 @@ import AdminCategories from "./pages/AdminCategories";
 import AdminBookings from "./pages/AdminBookings";
 import AdminReviews from "./pages/AdminReviews";
 
+// Extra pages
+import ForgotPassword from "./pages/ForgotPassword";
+import BookingConfirmed from "./pages/BookingConfirmed";
+import WriteReview from "./pages/WriteReview";
+import NotFound from "./pages/NotFound";
+
 function App() {
   return (
     <Routes>
@@ -40,6 +46,10 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/change-password" element={<ChangePassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/booking-confirmed" element={<BookingConfirmed />} />
+        <Route path="/bookings/:id/review" element={<WriteReview />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
 
       {/* Provider pages: blue sidebar */}

@@ -1,3 +1,4 @@
+import storyImg from "../assets/story.svg";
 import { Link } from "react-router-dom";
 import { providers, categories } from "../data/providers";
 import "./About.css";
@@ -49,7 +50,10 @@ function About() {
       <div className="wrap">
         {/* Our story */}
         <div className="story">
-          <div className="ph story-img">Story image</div>
+          <img className="story-img"
+              src={storyImg}
+              alt="A phone showing local service providers, with houses in a neighbourhood"
+          />
           <div className="story-text">
             <h2 style={{ fontSize: 30 }}>Our story</h2>
             <p className="m">

@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { categories, reviews } from "../data/providers";
+import { useProviders } from "../context/ProvidersContext";
+import ProviderAvatar from "../components/ProviderAvatar";
+import ServiceIllustration, {
+  illustrationOptions,
+  defaultIllustrationId,
+} from "../components/ServiceIllustration";
 import "./ProviderPages.css";
 
 // Dummy: we pretend the logged-in provider is the one with id 1
@@ -10,20 +16,81 @@ const averageRating = myReviews.length
   ? (myReviews.reduce((sum, r) => sum + r.rating, 0) / myReviews.length).toFixed(1)
   : "–";
 
-function ProviderProfile() {
-  const [profile, setProfile] = useState({
-    name: "Rahul Nair",
-    category: "Plumbing",
-    experience: "8",
-    area: "Kochi",
-    phone: "9876543210",
-    about: "Pipe repairs, leak fixing and bathroom fittings.",
+// Shrinks the chosen photo so it is small enough to store
+const resizeImage = (file, maxSize) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
+
+function ProviderProfile() {
+  const { providers, updateProvider } = useProviders();
+  const me = providers.find((p) => p.id === myId);
+
+  const [profile, setProfile] = useState({
+    name: me.name,
+    category: me.service,
+    experience: me.experience ?? "8",
+    area: me.location,
+    phone: me.phone ?? "9876543210",
+    about: me.description,
+  });
+  const [photo, setPhoto] = useState(me.photo || "");
+  const [illustration, setIllustration] = useState(me.illustration || "");
+  const [photoError, setPhotoError] = useState("");
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const fileRef = useRef(null);
+
+  // The illustration shown as selected (the category default if none was chosen)
+  const selectedArt = illustration || defaultIllustrationId(profile.category);
 
   const handleChange = (e) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
+    setSaved(false);
+  };
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = ""; // lets the user pick the same file again later
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setPhotoError("Please choose a JPG, PNG or WEBP image.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError("Image must be smaller than 5 MB.");
+      return;
+    }
+
+    try {
+      const small = await resizeImage(file, 400);
+      setPhoto(small);
+      setPhotoError("");
+      setSaved(false);
+    } catch {
+      setPhotoError("Could not read this image. Try another one.");
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhoto("");
+    setPhotoError("");
     setSaved(false);
   };
 
@@ -37,8 +104,17 @@ function ProviderProfile() {
     }
 
     setError("");
+    updateProvider(myId, {
+      name: profile.name,
+      service: profile.category,
+      location: profile.area,
+      description: profile.about,
+      experience: profile.experience,
+      phone: profile.phone,
+      photo,
+      illustration: selectedArt,
+    });
     setSaved(true);
-    console.log("Provider profile:", profile);
     // Later we will send this to the backend
   };
 
@@ -51,12 +127,45 @@ function ProviderProfile() {
       <div className="pp-layout">
         <form className="card pp-main" onSubmit={handleSubmit}>
           <div className="avatar-row">
-            <div className="ph avatar-lg">Photo</div>
-            <button type="button" className="btn btn2 btn-sm">
-              Change photo
-            </button>
+            <ProviderAvatar src={photo} name={profile.name || "?"} size={88} />
+
+            <div>
+              <button
+                type="button"
+                className="btn btn2 btn-sm"
+                onClick={() => fileRef.current.click()}
+              >
+                {photo ? "Change photo" : "Upload photo"}
+              </button>
+              {photo && (
+                <button
+                  type="button"
+                  className="btn btn2 btn-sm"
+                  style={{ marginLeft: 8 }}
+                  onClick={handleRemovePhoto}
+                >
+                  Remove
+                </button>
+              )}
+              <p className="m" style={{ marginTop: 8 }}>
+                Profile photo: JPG, PNG or WEBP.
+              </p>
+            </div>
+
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/png, image/jpeg, image/webp"
+              onChange={handlePhotoChange}
+              hidden
+            />
           </div>
 
+          {photoError && (
+            <p className="b x" style={{ marginTop: 14 }}>
+              {photoError}
+            </p>
+          )}
           {error && (
             <p className="b x" style={{ marginTop: 14 }}>
               {error}
@@ -67,6 +176,30 @@ function ProviderProfile() {
               Profile saved.
             </p>
           )}
+
+          <label>Card illustration</label>
+          <p className="m" style={{ marginTop: 4 }}>
+            Shown on your service card on the Home and Services pages.
+          </p>
+          <div className="art-grid">
+            {illustrationOptions.map((opt) => (
+              <button
+                type="button"
+                key={opt.id}
+                className={
+                  selectedArt === opt.id ? "art-option selected" : "art-option"
+                }
+                aria-pressed={selectedArt === opt.id}
+                onClick={() => {
+                  setIllustration(opt.id);
+                  setSaved(false);
+                }}
+              >
+                <ServiceIllustration id={opt.id} height={70} />
+                <span>{opt.label}</span>
+              </button>
+            ))}
+          </div>
 
           <label htmlFor="name">Business / full name</label>
           <input

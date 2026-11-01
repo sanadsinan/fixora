@@ -1,3 +1,5 @@
+import { useProviders } from "../context/ProvidersContext";
+import ServiceIllustration from "../components/ServiceIllustration";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Home.css";
@@ -18,17 +20,12 @@ const steps = [
   { title: "3. Review", text: "Rate the job once it is done." },
 ];
 
-// Dummy data for now. Later this will come from the backend.
-const providers = [
-  { id: 1, name: "Rahul Nair", service: "Plumbing", location: "Kochi", rating: 4.8, price: 300 },
-  { id: 2, name: "Anil Kumar", service: "Electrical", location: "Kakkanad", rating: 4.7, price: 350 },
-  { id: 3, name: "Maya Joseph", service: "Cleaning", location: "Edappally", rating: 4.9, price: 500 },
-  { id: 4, name: "Suresh Babu", service: "Carpentry", location: "Aluva", rating: 4.6, price: 450 },
-  { id: 5, name: "Faisal M", service: "AC Repair", location: "Kochi", rating: 4.8, price: 600 },
-  { id: 6, name: "Joby Thomas", service: "Painting", location: "Thrippunithura", rating: 4.5, price: 400 },
-];
 
 function Home() {
+  const { providers } = useProviders();
+  const topProviders = [...providers]
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, 6);
   const [service, setService] = useState("");
   const [location, setLocation] = useState("");
   const navigate = useNavigate();
@@ -104,9 +101,9 @@ function Home() {
         {/* Top-rated providers */}
         <h2 className="section-title">Top-rated providers</h2>
         <div className="provider-row">
-          {providers.map((p) => (
+          {topProviders.map((p) => (
             <div className="card provider-card" key={p.id}>
-              <div className="ph" style={{ height: 130 }}>Service photo</div>
+              <ServiceIllustration id={p.illustration} service={p.service} height={130} />
               <h3>{p.name}</h3>
               <p className="m">{p.service} · {p.location}</p>
               <p className="m">★ {p.rating} · from ₹{p.price}</p>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { initialBookings } from "../data/bookings";
 import "./Bookings.css";
 
@@ -16,11 +17,6 @@ function Bookings() {
   const [bookings, setBookings] = useState(initialBookings);
   const [filter, setFilter] = useState("All");
 
-  // Review form state
-  const [reviewingId, setReviewingId] = useState(null);
-  const [rating, setRating] = useState("5");
-  const [comment, setComment] = useState("");
-
   const visibleBookings =
     filter === "All" ? bookings : bookings.filter((b) => b.status === filter);
 
@@ -30,24 +26,6 @@ function Bookings() {
     setBookings(
       bookings.map((b) => (b.id === id ? { ...b, status: "Cancelled" } : b))
     );
-  };
-
-  const openReview = (id) => {
-    setReviewingId(id);
-    setRating("5");
-    setComment("");
-  };
-
-  const handleReviewSubmit = (e) => {
-    e.preventDefault();
-
-    console.log("Review data:", { bookingId: reviewingId, rating, comment });
-    // Later we will send this to the backend
-
-    setBookings(
-      bookings.map((b) => (b.id === reviewingId ? { ...b, reviewed: true } : b))
-    );
-    setReviewingId(null);
   };
 
   // Decides what to show in the Action column
@@ -63,9 +41,9 @@ function Bookings() {
       return b.reviewed ? (
         <span className="m">Reviewed</span>
       ) : (
-        <button className="link-btn" onClick={() => openReview(b.id)}>
+        <Link className="link-btn" to={`/bookings/${b.id}/review`}>
           Write review
-        </button>
+        </Link>
       );
     }
     return "–";
@@ -123,49 +101,6 @@ function Bookings() {
           </tbody>
         </table>
       </div>
-
-      {/* Review form (shown after clicking "Write review") */}
-      {reviewingId && (
-        <form className="card review-box" onSubmit={handleReviewSubmit}>
-          <h3>Write a review</h3>
-
-          <label htmlFor="rating">Rating</label>
-          <select
-            id="rating"
-            className="in"
-            value={rating}
-            onChange={(e) => setRating(e.target.value)}
-          >
-            <option value="5">5 – Excellent</option>
-            <option value="4">4 – Good</option>
-            <option value="3">3 – Average</option>
-            <option value="2">2 – Poor</option>
-            <option value="1">1 – Very poor</option>
-          </select>
-
-          <label htmlFor="comment">Comment</label>
-          <textarea
-            id="comment"
-            rows="3"
-            className="in"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-          />
-
-          <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-            <button type="submit" className="btn">
-              Submit review
-            </button>
-            <button
-              type="button"
-              className="btn btn2"
-              onClick={() => setReviewingId(null)}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
     </div>
   );
 }

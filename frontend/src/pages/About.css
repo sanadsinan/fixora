@@ -45,7 +45,9 @@
 .story-img {
   flex: 1;
   min-width: 300px;
-  height: 320px;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
   border-radius: 28px;
 }
 

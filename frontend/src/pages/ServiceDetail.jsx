@@ -1,11 +1,24 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { providers, reviews } from "../data/providers";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { reviews } from "../data/providers";
+import { useProviders } from "../context/ProvidersContext";
+import ProviderAvatar from "../components/ProviderAvatar";
+import ServiceIllustration from "../components/ServiceIllustration";
 import "./ServiceDetail.css";
+
+// Turns "2026-10-28" into "28 Oct 2026"
+const formatDate = (iso) =>
+  new Date(iso).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 
 function ServiceDetail() {
   // Reads the :id part of the address, e.g. /services/3 gives id = "3"
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { providers } = useProviders();
 
   const provider = providers.find((p) => p.id === Number(id));
   const providerReviews = reviews.filter((r) => r.providerId === Number(id));
@@ -17,7 +30,6 @@ function ServiceDetail() {
     notes: "",
   });
   const [error, setError] = useState("");
-  const [confirmed, setConfirmed] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -34,9 +46,18 @@ function ServiceDetail() {
     }
 
     setError("");
-    setConfirmed(true);
     console.log("Booking data:", { providerId: provider.id, ...booking });
     // Later we will send this to the backend
+
+    // Go to the confirmation page and pass the booking details along
+    navigate("/booking-confirmed", {
+      state: {
+        service: provider.service,
+        provider: provider.name,
+        when: `${formatDate(booking.date)}, ${booking.time}`,
+        address: booking.address,
+      },
+    });
   };
 
   // If the id in the address does not match any provider
@@ -63,18 +84,22 @@ function ServiceDetail() {
       <div className="detail-layout">
         {/* Left side: provider information */}
         <div className="detail-main">
-          <div className="ph" style={{ height: 260 }}>
-            Service photo
-          </div>
+          <ServiceIllustration
+            banner
+            id={provider.illustration}
+            service={provider.service}
+          >
+            <ProviderAvatar src={provider.photo} name={provider.name} size={120} />
+            <div className="banner-panel">
+              <h1 style={{ fontSize: 26 }}>{provider.service}</h1>
+              <p className="m" style={{ marginTop: 4 }}>
+                by {provider.name} · {provider.location} · ★ {provider.rating}
+              </p>
+            </div>
+          </ServiceIllustration>
 
-          <h1 style={{ fontSize: 28, marginTop: 20 }}>{provider.service}</h1>
-          <p className="m" style={{ marginTop: 6 }}>
-            by {provider.name} · {provider.location} · ★ {provider.rating}
-          </p>
-
-          <p style={{ marginTop: 16, lineHeight: 1.6 }}>
-            {provider.description}
-          </p>
+          <h2 style={{ fontSize: 20, marginTop: 28 }}>About this service</h2>
+          <p style={{ marginTop: 8, lineHeight: 1.6 }}>{provider.description}</p>
 
           <h2 style={{ fontSize: 20, marginTop: 32 }}>Customer reviews</h2>
 
@@ -107,63 +132,54 @@ function ServiceDetail() {
             </p>
           )}
 
-          {confirmed ? (
-            <div className="success-box">
-              Booking request sent to {provider.name} for {booking.date} at{" "}
-              {booking.time}. You will see its status in My Bookings.
-            </div>
-          ) : (
-            <>
-              <label htmlFor="date">Date</label>
-              <input
-                id="date"
-                name="date"
-                type="date"
-                min={today}
-                className="in"
-                value={booking.date}
-                onChange={handleChange}
-              />
+          <label htmlFor="date">Date</label>
+          <input
+            id="date"
+            name="date"
+            type="date"
+            min={today}
+            className="in"
+            value={booking.date}
+            onChange={handleChange}
+          />
 
-              <label htmlFor="time">Time</label>
-              <input
-                id="time"
-                name="time"
-                type="time"
-                className="in"
-                value={booking.time}
-                onChange={handleChange}
-              />
+          <label htmlFor="time">Time</label>
+          <input
+            id="time"
+            name="time"
+            type="time"
+            className="in"
+            value={booking.time}
+            onChange={handleChange}
+          />
 
-              <label htmlFor="address">Address</label>
-              <textarea
-                id="address"
-                name="address"
-                rows="2"
-                className="in"
-                value={booking.address}
-                onChange={handleChange}
-              />
+          <label htmlFor="address">Address</label>
+          <textarea
+            id="address"
+            name="address"
+            rows="2"
+            className="in"
+            value={booking.address}
+            onChange={handleChange}
+          />
 
-              <label htmlFor="notes">Notes (optional)</label>
-              <textarea
-                id="notes"
-                name="notes"
-                rows="2"
-                className="in"
-                value={booking.notes}
-                onChange={handleChange}
-              />
+          <label htmlFor="notes">Notes (optional)</label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows="2"
+            className="in"
+            value={booking.notes}
+            onChange={handleChange}
+          />
 
-              <button
-                type="submit"
-                className="btn"
-                style={{ display: "block", width: "100%", marginTop: 20 }}
-              >
-                Confirm booking
-              </button>
-            </>
-          )}
+          <button
+            type="submit"
+            className="btn"
+            style={{ display: "block", width: "100%", marginTop: 20 }}
+          >
+            Confirm booking
+          </button>
         </form>
       </div>
     </div>
