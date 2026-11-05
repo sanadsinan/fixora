@@ -1,8 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import "./Register.css";
 
 function Register() {
+  const { register } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [role, setRole] = useState("customer");
   const [error, setError] = useState("");
   const [form, setForm] = useState({
@@ -22,7 +26,7 @@ function Register() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!form.name || !form.email || !form.phone || !form.password) {
@@ -35,8 +39,16 @@ function Register() {
     }
 
     setError("");
-    console.log("Register data:", { role, ...form });
-    // Later we will send this to the backend
+    setLoading(true);
+
+    try {
+      const user = await register({ role, ...form });
+      navigate(user.role === "provider" ? "/provider" : "/");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -193,8 +205,9 @@ function Register() {
           type="submit"
           className="btn"
           style={{ display: "block", width: "100%", marginTop: 24 }}
+          disabled={loading}
         >
-          Create account
+          {loading ? "Creating account..." : "Create account"}
         </button>
 
         <p className="m" style={{ marginTop: 16, textAlign: "center" }}>

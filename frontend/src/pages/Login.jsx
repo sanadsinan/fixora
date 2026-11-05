@@ -1,13 +1,25 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
+// Where each type of account goes after logging in
+const homeFor = {
+  customer: "/",
+  provider: "/provider",
+  admin: "/admin",
+};
 
 function Login() {
+  const { login, logout } = useAuth();
+  const navigate = useNavigate();
+
   const [role, setRole] = useState("customer");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!email || !password) {
@@ -16,8 +28,28 @@ function Login() {
     }
 
     setError("");
-    console.log("Login data:", { role, email, password });
-    // Later we will send this to the backend
+    setLoading(true);
+
+    try {
+      const user = await login(email, password);
+
+      // The toggle must match the account type (admins can use either)
+      if (user.role !== "admin" && user.role !== role) {
+        logout();
+        setError(
+          `This is a ${user.role} account. Please choose "${
+            user.role === "provider" ? "Service provider" : "Customer"
+          }" above.`
+        );
+        return;
+      }
+
+      navigate(homeFor[user.role]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -80,8 +112,9 @@ function Login() {
           type="submit"
           className="btn"
           style={{ display: "block", width: "100%", marginTop: 22 }}
+          disabled={loading}
         >
-          Log in
+          {loading ? "Logging in..." : "Log in"}
         </button>
 
         <p className="m" style={{ marginTop: 16, textAlign: "center" }}>
