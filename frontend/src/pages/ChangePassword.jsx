@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
 
 function ChangePassword() {
+  const { token } = useAuth();
+
   const [form, setForm] = useState({
     current: "",
     newPassword: "",
@@ -9,13 +13,14 @@ function ChangePassword() {
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setSuccess(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccess(false);
 
@@ -31,15 +36,26 @@ function ChangePassword() {
       setError("New passwords do not match.");
       return;
     }
-    if (form.newPassword === form.current) {
-      setError("New password must be different from the current one.");
-      return;
-    }
 
     setError("");
-    setSuccess(true);
-    setForm({ current: "", newPassword: "", confirm: "" });
-    // Later we will send this to the backend (never log passwords!)
+    setLoading(true);
+
+    try {
+      await api("/api/users/me/password", {
+        method: "PUT",
+        token,
+        body: {
+          currentPassword: form.current,
+          newPassword: form.newPassword,
+        },
+      });
+      setSuccess(true);
+      setForm({ current: "", newPassword: "", confirm: "" });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -99,12 +115,13 @@ function ChangePassword() {
           type="submit"
           className="btn"
           style={{ display: "block", width: "100%", marginTop: 24 }}
+          disabled={loading}
         >
-          Update password
+          {loading ? "Updating..." : "Update password"}
         </button>
 
         <p className="m" style={{ marginTop: 16, textAlign: "center" }}>
-          <Link to="/profile">Back to profile</Link>
+          <Link to="/">Back to home</Link>
         </p>
       </form>
     </div>

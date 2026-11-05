@@ -3,11 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 // Where each type of account goes after logging in
-const homeFor = {
-  customer: "/",
-  provider: "/provider",
-  admin: "/admin",
-};
+
 
 function Login() {
   const { login, logout } = useAuth();
@@ -20,31 +16,37 @@ function Login() {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!email || !password) {
-      setError("Please fill in all fields.");
-      return;
-    }
+  if (!email || !password) {
+    setError("Please fill in all fields.");
+    return;
+  }
 
-    setError("");
-    setLoading(true);
+  setError("");
+  setLoading(true);
 
-    try {
-      const user = await login(email, password);
+  try {
+    const user = await login(email, password);
 
-      // The toggle must match the account type (admins can use either)
-      if (user.role !== "admin" && user.role !== role) {
-        logout();
-        setError(
-          `This is a ${user.role} account. Please choose "${
-            user.role === "provider" ? "Service provider" : "Customer"
-          }" above.`
-        );
-        return;
+    // The toggle must match the account (admins can use either).
+    // A customer who applied as a provider can use both.
+      if (user.role !== "admin") {
+        const allowed = role === "customer" ? user.role === "customer" : user.isProvider;
+
+        if (!allowed) {
+          logout();
+          setError(
+            role === "customer"
+              ? 'This is a provider account. Please choose "Service provider" above.'
+              : 'This account is not a provider. Please choose "Customer" above.'
+          );
+          return;
+        }
       }
 
-      navigate(homeFor[user.role]);
+      if (user.role === "admin") navigate("/admin");
+      else navigate(role === "provider" ? "/provider" : "/");
     } catch (err) {
       setError(err.message);
     } finally {

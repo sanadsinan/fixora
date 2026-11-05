@@ -1,20 +1,14 @@
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { categories, reviews } from "../data/providers";
-import { useProviders } from "../context/ProvidersContext";
+import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
+import { categories } from "../data/providers";
 import ProviderAvatar from "../components/ProviderAvatar";
 import ServiceIllustration, {
   illustrationOptions,
   defaultIllustrationId,
 } from "../components/ServiceIllustration";
 import "./ProviderPages.css";
-
-// Dummy: we pretend the logged-in provider is the one with id 1
-const myId = 1;
-const myReviews = reviews.filter((r) => r.providerId === myId);
-const averageRating = myReviews.length
-  ? (myReviews.reduce((sum, r) => sum + r.rating, 0) / myReviews.length).toFixed(1)
-  : "–";
 
 // Shrinks the chosen photo so it is small enough to store
 const resizeImage = (file, maxSize) =>
@@ -28,7 +22,7 @@ const resizeImage = (file, maxSize) =>
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
         canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.85));
+        resolve(canvas.toDataURL("image/jpeg", 0.8));
       };
       img.onerror = reject;
       img.src = reader.result;
@@ -37,24 +31,61 @@ const resizeImage = (file, maxSize) =>
     reader.readAsDataURL(file);
   });
 
-function ProviderProfile() {
-  const { providers, updateProvider } = useProviders();
-  const me = providers.find((p) => p.id === myId);
+const statusBadge = { pending: "b w", approved: "b ok", rejected: "b x" };
+const statusLabel = {
+  pending: "Pending approval",
+  approved: "Approved",
+  rejected: "Rejected",
+};
 
-  const [profile, setProfile] = useState({
-    name: me.name,
-    category: me.service,
-    experience: me.experience ?? "8",
-    area: me.location,
-    phone: me.phone ?? "9876543210",
-    about: me.description,
+function ProviderProfile() {
+  const { token, updateUser } = useAuth();
+  const fileRef = useRef(null);
+
+  const [profile, setProfile] = useState(null);
+  const [photo, setPhoto] = useState("");
+  const [illustration, setIllustration] = useState("");
+  const [info, setInfo] = useState({
+    approvalStatus: "pending",
+    rating: null,
+    reviewCount: 0,
   });
-  const [photo, setPhoto] = useState(me.photo || "");
-  const [illustration, setIllustration] = useState(me.illustration || "");
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [photoError, setPhotoError] = useState("");
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
-  const fileRef = useRef(null);
+
+  // Load my real profile from the server when the page opens
+  useEffect(() => {
+    api("/api/providers/me", { token })
+      .then((data) => {
+        setProfile({
+          name: data.name,
+          category: data.category,
+          experience: String(data.experience),
+          area: data.area,
+          phone: data.phone,
+          about: data.about,
+        });
+        setPhoto(data.photo);
+        setIllustration(data.illustration);
+        setInfo({
+          approvalStatus: data.approvalStatus,
+          rating: data.rating,
+          reviewCount: data.reviewCount,
+        });
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  if (loading) return <p className="m">Loading your profile...</p>;
+
+  if (!profile) {
+    return <p className="b x">{error || "Could not load your profile."}</p>;
+  }
 
   // The illustration shown as selected (the category default if none was chosen)
   const selectedArt = illustration || defaultIllustrationId(profile.category);
@@ -79,8 +110,7 @@ function ProviderProfile() {
     }
 
     try {
-      const small = await resizeImage(file, 400);
-      setPhoto(small);
+      setPhoto(await resizeImage(file, 400));
       setPhotoError("");
       setSaved(false);
     } catch {
@@ -94,28 +124,32 @@ function ProviderProfile() {
     setSaved(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!profile.name || !profile.phone || !profile.area) {
+    if (!profile.name.trim() || !profile.phone.trim() || !profile.area.trim()) {
       setError("Name, phone and working area are required.");
       setSaved(false);
       return;
     }
 
     setError("");
-    updateProvider(myId, {
-      name: profile.name,
-      service: profile.category,
-      location: profile.area,
-      description: profile.about,
-      experience: profile.experience,
-      phone: profile.phone,
-      photo,
-      illustration: selectedArt,
-    });
-    setSaved(true);
-    // Later we will send this to the backend
+    setSaving(true);
+
+    try {
+      const data = await api("/api/providers/me", {
+        method: "PUT",
+        token,
+        body: { ...profile, photo, illustration: selectedArt },
+      });
+      updateUser({ name: data.name, photo: data.photo }); // the navbar shows them
+      setSaved(true);
+    } catch (err) {
+      setError(err.message);
+      setSaved(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -264,25 +298,34 @@ function ProviderProfile() {
             type="submit"
             className="btn"
             style={{ display: "block", width: "100%", marginTop: 22 }}
+            disabled={saving}
           >
-            Save profile
+            {saving ? "Saving..." : "Save profile"}
           </button>
         </form>
 
         <div className="pp-side">
           <div className="card">
             <h3>Rating</h3>
-            <h2 style={{ marginTop: 6 }}>★ {averageRating}</h2>
+            <h2 style={{ marginTop: 6 }}>★ {info.rating ?? "–"}</h2>
             <p className="m" style={{ marginTop: 4 }}>
-              From {myReviews.length} reviews
+              From {info.reviewCount} reviews
             </p>
           </div>
 
           <div className="card" style={{ marginTop: 20 }}>
             <h3>Account</h3>
             <p className="m" style={{ marginTop: 6 }}>
-              Status: <span className="b ok">Approved</span>
+              Status:{" "}
+              <span className={statusBadge[info.approvalStatus]}>
+                {statusLabel[info.approvalStatus]}
+              </span>
             </p>
+            {info.approvalStatus === "pending" && (
+              <p className="m" style={{ marginTop: 8 }}>
+                Your profile goes live after an admin approves it.
+              </p>
+            )}
             <Link
               className="btn btn2"
               to="/change-password"

@@ -29,17 +29,20 @@
 }
 
 /* Log out button at the bottom of the sidebar */
-.sb a.out {
+.sb .out {
   margin-top: auto;
-  text-align: center;
+  padding: 11px 14px;
   border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 999px;
-  padding: 11px 14px;
-  color: #ffffff;
   background: transparent;
+  color: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  text-align: center;
+  cursor: pointer;
 }
 
-.sb a.out:hover {
+.sb .out:hover {
   background: rgba(255, 255, 255, 0.12);
 }
 
@@ -76,9 +79,10 @@
     white-space: nowrap;
   }
 
-  .sb a.out {
+  .sb .out {
     margin-top: 0;
     margin-left: auto;
+    white-space: nowrap;
   }
 
   .sb .logo {
@@ -89,8 +93,7 @@
     padding: 20px;
   }
 
-    .tw td,
-  .tw th {
+  .tw td,.tw th {
     white-space: nowrap;
   }
 

@@ -416,3 +416,108 @@ th {
     font-size: 30px !important;
   }
 }
+
+/* ---------- Logged-in profile menu ---------- */
+.profile-wrap {
+  position: relative;
+  margin-left: 24px;
+}
+
+.profile-btn {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #1e40af;
+  cursor: pointer;
+  transition: background 0.2s;
+  padding: 0; overflow: hidden;
+}
+
+.profile-btn:hover {
+  background: #bfdbfe;
+}
+
+.profile-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 52px;
+  width: 210px;
+  padding: 8px;
+  z-index: 20;
+}
+
+.profile-menu.open {
+  display: block;
+}
+
+.profile-name {
+  margin-bottom: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #eef2fa;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.nav .profile-menu a,
+.profile-menu button {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: #334155;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nav .profile-menu a:hover,
+.profile-menu button:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+@media (max-width: 768px) {
+  .profile-wrap {
+    margin-left: 0;
+  }
+
+  /* On phones the menu items are listed inside the ☰ menu */
+  .profile-btn {
+    display: none;
+  }
+
+  .profile-menu {
+    display: block;
+    position: static;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .nav .profile-menu a,
+  .profile-menu button {
+    padding: 12px 4px;
+  }
+}
+
+.profile-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

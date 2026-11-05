@@ -28,6 +28,12 @@ export function AuthProvider({ children }) {
   const register = async (form) =>
     save(await api("/api/auth/register", { method: "POST", body: form }));
 
+  // Changes some details of the logged-in user, such as the name in the navbar
+  const updateUser = (changes) => {
+    if (!auth) return;
+    save({ ...auth, user: { ...auth.user, ...changes } });
+  };
+
   const logout = () => {
     localStorage.removeItem(STORAGE_KEY);
     setAuth(null);
@@ -40,6 +46,7 @@ export function AuthProvider({ children }) {
         token: auth ? auth.token : null,
         login,
         register,
+        updateUser,
         logout,
       }}
     >

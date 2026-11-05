@@ -91,7 +91,13 @@ router.post("/register", async (req, res) => {
 
     await connection.commit();
 
-    const user = { id: userId, name: name.trim(), email: cleanEmail, role };
+    const user = {
+      id: userId,
+      name: name.trim(),
+      email: cleanEmail,
+      role,
+      isProvider: role === "provider",
+    };
     if (role === "provider") user.approvalStatus = "pending";
 
     res.status(201).json({ token: createToken(user), user });
@@ -114,7 +120,7 @@ router.post("/login", async (req, res) => {
 
   try {
     const [rows] = await pool.query(
-      `SELECT u.id, u.name, u.email, u.password_hash, u.role, u.status,
+        `SELECT u.id, u.name, u.email, u.password_hash, u.role, u.status, u.photo_url,
               p.approval_status
        FROM users u
        LEFT JOIN provider_profiles p ON p.user_id = u.id
@@ -133,13 +139,18 @@ router.post("/login", async (req, res) => {
       return res.status(403).json({ message: "Your account has been blocked." });
     }
 
+    // Anyone with a provider profile counts as a provider
+    const isProvider = user.role === "provider" || user.approval_status !== null;
+
     const payload = {
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
+      isProvider,
+      photo: user.photo_url || "",
     };
-    if (user.role === "provider") payload.approvalStatus = user.approval_status;
+    if (isProvider) payload.approvalStatus = user.approval_status;
 
     res.json({ token: createToken(user), user: payload });
   } catch (err) {
@@ -152,7 +163,7 @@ router.post("/login", async (req, res) => {
 router.get("/me", requireAuth, async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT u.id, u.name, u.email, u.role, p.approval_status
+      `SELECT u.id, u.name, u.email, u.role, u.photo_url, p.approval_status
        FROM users u
        LEFT JOIN provider_profiles p ON p.user_id = u.id
        WHERE u.id = ?`,
@@ -164,8 +175,17 @@ router.get("/me", requireAuth, async (req, res) => {
     }
 
     const user = rows[0];
-    const result = { id: user.id, name: user.name, email: user.email, role: user.role };
-    if (user.role === "provider") result.approvalStatus = user.approval_status;
+    const isProvider = user.role === "provider" || user.approval_status !== null;
+
+    const result = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isProvider,
+      photo: user.photo_url || "",
+    };
+    if (isProvider) result.approvalStatus = user.approval_status;
 
     res.json(result);
   } catch (err) {
