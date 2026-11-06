@@ -5,6 +5,7 @@ import pool from "./db.js";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import providerRoutes from "./routes/providers.js";
+import serviceRoutes from "./routes/services.js";
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(express.json({ limit: "1mb" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/providers", providerRoutes);
+app.use("/api/services", serviceRoutes);
 
 // A simple route to check that the server is running
 app.get("/api/health", (req, res) => {

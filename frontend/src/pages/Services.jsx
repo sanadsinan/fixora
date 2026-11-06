@@ -1,21 +1,36 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { categories } from "../data/providers";
-import { useProviders } from "../context/ProvidersContext";
+import { api } from "../api";
 import ServiceIllustration from "../components/ServiceIllustration";
 import "./Services.css";
 
 function Services() {
-  // Reads words sent from the Home page search bar (?service=...&location=...)
-  const { providers } = useProviders();
+  // Reads words sent from the Home page (?service=...&location=...&category=...)
   const [params] = useSearchParams();
+
+  const [providers, setProviders] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [searchText, setSearchText] = useState(params.get("service") || "");
   const [query, setQuery] = useState(params.get("service") || "");
   const categoryFromAddress = params.get("category");
-  const [selectedCategories, setSelectedCategories] = useState(categoryFromAddress ? [categoryFromAddress] : []);
+  const [selectedCategories, setSelectedCategories] = useState(
+    categoryFromAddress ? [categoryFromAddress] : []
+  );
   const [location, setLocation] = useState(params.get("location") || "");
   const [minRating, setMinRating] = useState(0);
+
+  // Load the providers and the categories from the server
+  useEffect(() => {
+    Promise.all([api("/api/providers"), api("/api/categories")])
+      .then(([providerData, categoryData]) => {
+        setProviders(providerData);
+        setCategories(categoryData.map((c) => c.name));
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const toggleCategory = (name) => {
     if (selectedCategories.includes(name)) {
@@ -52,7 +67,7 @@ function Services() {
       .toLowerCase()
       .includes(location.toLowerCase());
 
-    const matchesRating = p.rating >= minRating;
+    const matchesRating = (p.rating ?? 0) >= minRating;
 
     return matchesQuery && matchesCategory && matchesLocation && matchesRating;
   });
@@ -127,17 +142,24 @@ function Services() {
         </div>
 
         {/* Results */}
-        {filtered.length > 0 ? (
+        {loading ? (
+          <p className="m empty-msg">Loading providers...</p>
+        ) : filtered.length > 0 ? (
           <div className="grid service-results">
             {filtered.map((p) => (
               <div className="card service-card" key={p.id}>
-                <ServiceIllustration id={p.illustration} service={p.service} height={130} />
+                <ServiceIllustration
+                  id={p.illustration}
+                  service={p.service}
+                  height={130}
+                />
                 <h3>{p.name}</h3>
                 <p className="m">
                   {p.service} · {p.location}
                 </p>
                 <p className="m">
-                  ★ {p.rating} · from ₹{p.price}
+                  ★ {p.rating ?? "New"} ·{" "}
+                  {p.price !== null ? `from ₹${p.price}` : "No services yet"}
                 </p>
                 <Link
                   className="btn"
@@ -151,7 +173,9 @@ function Services() {
           </div>
         ) : (
           <p className="m empty-msg">
-            No providers found. Try changing your filters.
+            {providers.length === 0
+              ? "No providers are available yet."
+              : "No providers found. Try changing your filters."}
           </p>
         )}
       </div>

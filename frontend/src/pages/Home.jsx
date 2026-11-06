@@ -1,9 +1,9 @@
-import { useProviders } from "../context/ProvidersContext";
-import ServiceIllustration from "../components/ServiceIllustration";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "./Home.css";
+import { api } from "../api";
+import ServiceIllustration from "../components/ServiceIllustration";
 import heroImg from "../assets/hero.svg";
+import "./Home.css";
 
 const categories = [
   "Plumbing",
@@ -20,19 +20,26 @@ const steps = [
   { title: "3. Review", text: "Rate the job once it is done." },
 ];
 
-
 function Home() {
-  const { providers } = useProviders();
-  const topProviders = [...providers]
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 6);
   const [service, setService] = useState("");
   const [location, setLocation] = useState("");
+  const [providers, setProviders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Load the top-rated providers from the server (the server sends them sorted)
+  useEffect(() => {
+    api("/api/providers")
+      .then((data) => setProviders(data.slice(0, 6)))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleSearch = () => {
     // Go to the services page with the search words in the address
-    navigate(`/services?service=${service}&location=${location}`);
+    navigate(
+      `/services?service=${encodeURIComponent(service)}&location=${encodeURIComponent(location)}`
+    );
   };
 
   return (
@@ -68,7 +75,11 @@ function Home() {
             </div>
           </div>
 
-          <img className="hero-img" src={heroImg} alt="House with tools and a booking confirmation" />
+          <img
+            className="hero-img"
+            src={heroImg}
+            alt="House with tools and a booking confirmation"
+          />
         </div>
       </div>
 
@@ -93,30 +104,52 @@ function Home() {
           {steps.map((step) => (
             <div className="card" key={step.title}>
               <h3>{step.title}</h3>
-              <p className="m" style={{ marginTop: 6 }}>{step.text}</p>
+              <p className="m" style={{ marginTop: 6 }}>
+                {step.text}
+              </p>
             </div>
           ))}
         </div>
 
         {/* Top-rated providers */}
         <h2 className="section-title">Top-rated providers</h2>
-        <div className="provider-row">
-          {topProviders.map((p) => (
-            <div className="card provider-card" key={p.id}>
-              <ServiceIllustration id={p.illustration} service={p.service} height={130} />
-              <h3>{p.name}</h3>
-              <p className="m">{p.service} · {p.location}</p>
-              <p className="m">★ {p.rating} · from ₹{p.price}</p>
-              <Link
-                className="btn"
-                to={`/services/${p.id}`}
-                style={{ marginTop: 14, display: "block", textAlign: "center" }}
-              >
-                View &amp; Book
-              </Link>
-            </div>
-          ))}
-        </div>
+
+        {loading ? (
+          <p className="m" style={{ marginTop: 16 }}>
+            Loading providers...
+          </p>
+        ) : providers.length === 0 ? (
+          <p className="m" style={{ marginTop: 16 }}>
+            No providers are available yet. Please check back soon.
+          </p>
+        ) : (
+          <div className="provider-row">
+            {providers.map((p) => (
+              <div className="card provider-card" key={p.id}>
+                <ServiceIllustration
+                  id={p.illustration}
+                  service={p.service}
+                  height={130}
+                />
+                <h3>{p.name}</h3>
+                <p className="m">
+                  {p.service} · {p.location}
+                </p>
+                <p className="m">
+                  ★ {p.rating ?? "New"} ·{" "}
+                  {p.price !== null ? `from ₹${p.price}` : "No services yet"}
+                </p>
+                <Link
+                  className="btn"
+                  to={`/services/${p.id}`}
+                  style={{ marginTop: 14, display: "block", textAlign: "center" }}
+                >
+                  View &amp; Book
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

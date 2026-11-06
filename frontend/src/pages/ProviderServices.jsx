@@ -1,24 +1,45 @@
-import { useState, useRef } from "react";
-import { categories } from "../data/providers";
-import { initialServices } from "../data/services";
+import { useEffect, useRef, useState } from "react";
+import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
 import "./ProviderPages.css";
 
-const emptyForm = {
-  name: "",
-  category: categories[0],
-  price: "",
-  description: "",
-};
+const emptyForm = { name: "", category: "", price: "", description: "" };
 
 function ProviderServices() {
-  const [services, setServices] = useState(initialServices);
+  const { user, token } = useAuth();
+
+  const [services, setServices] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const formRef = useRef(null);
 
+  // Load my services and the category list from the server
+  useEffect(() => {
+    Promise.all([
+      api("/api/services/mine", { token }),
+      api("/api/categories"),
+    ])
+      .then(([serviceData, categoryData]) => {
+        const names = categoryData.map((c) => c.name);
+        setServices(serviceData);
+        setCategories(names);
+        setForm((f) => ({ ...f, category: names[0] || "" }));
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [token]);
+
   const scrollToForm = () => {
     formRef.current.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const resetForm = () => {
+    setEditingId(null);
+    setForm({ ...emptyForm, category: categories[0] || "" });
   };
 
   const handleChange = (e) => {
@@ -26,8 +47,7 @@ function ProviderServices() {
   };
 
   const handleAddClick = () => {
-    setEditingId(null);
-    setForm(emptyForm);
+    resetForm();
     setError("");
     scrollToForm();
   };
@@ -44,29 +64,37 @@ function ProviderServices() {
     scrollToForm();
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!window.confirm("Delete this service?")) return;
-    setServices(services.filter((s) => s.id !== id));
-    if (editingId === id) {
-      setEditingId(null);
-      setForm(emptyForm);
+
+    try {
+      await api(`/api/services/${id}`, { method: "DELETE", token });
+      setServices(services.filter((s) => s.id !== id));
+      if (editingId === id) resetForm();
+      setError("");
+    } catch (err) {
+      setError(err.message);
     }
   };
 
-  const toggleStatus = (id) => {
-    setServices(
-      services.map((s) =>
-        s.id === id
-          ? { ...s, status: s.status === "Active" ? "Hidden" : "Active" }
-          : s
-      )
-    );
+  const toggleStatus = async (s) => {
+    try {
+      const updated = await api(`/api/services/${s.id}/status`, {
+        method: "PATCH",
+        token,
+        body: { status: s.status === "active" ? "hidden" : "active" },
+      });
+      setServices(services.map((x) => (x.id === s.id ? updated : x)));
+      setError("");
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.name || !form.price) {
+    if (!form.name.trim() || !form.price) {
       setError("Please enter a service name and price.");
       return;
     }
@@ -75,25 +103,34 @@ function ProviderServices() {
       return;
     }
 
-    const data = { ...form, price: Number(form.price) };
-
-    if (editingId) {
-      // Editing: replace the fields of that one service
-      setServices(
-        services.map((s) => (s.id === editingId ? { ...s, ...data } : s))
-      );
-    } else {
-      // Adding: Date.now() is a temporary id. The database gives real ids later.
-      setServices([...services, { id: Date.now(), status: "Active", ...data }]);
-    }
-
-    console.log("Service saved:", data);
-    // Later we will send this to the backend
-
     setError("");
-    setEditingId(null);
-    setForm(emptyForm);
+    setSaving(true);
+
+    try {
+      if (editingId) {
+        const updated = await api(`/api/services/${editingId}`, {
+          method: "PUT",
+          token,
+          body: form,
+        });
+        setServices(services.map((s) => (s.id === editingId ? updated : s)));
+      } else {
+        const created = await api("/api/services", {
+          method: "POST",
+          token,
+          body: form,
+        });
+        setServices([...services, created]);
+      }
+      resetForm();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) return <p className="m">Loading your services...</p>;
 
   return (
     <div>
@@ -103,6 +140,19 @@ function ProviderServices() {
           + Add service
         </button>
       </div>
+
+      {user.approvalStatus !== "approved" && (
+        <p className="b w" style={{ marginTop: 16 }}>
+          Your services become visible to customers after an admin approves your
+          provider profile.
+        </p>
+      )}
+
+      {error && (
+        <p className="b x" style={{ marginTop: 16 }}>
+          {error}
+        </p>
+      )}
 
       <div className="card tw" style={{ marginTop: 20 }}>
         <table>
@@ -123,8 +173,8 @@ function ProviderServices() {
                   <td>{s.category}</td>
                   <td>₹{s.price}</td>
                   <td>
-                    <span className={s.status === "Active" ? "b ok" : "b w"}>
-                      {s.status}
+                    <span className={s.status === "active" ? "b ok" : "b w"}>
+                      {s.status === "active" ? "Active" : "Hidden"}
                     </span>
                   </td>
                   <td>
@@ -137,9 +187,9 @@ function ProviderServices() {
                       </button>
                       <button
                         className="btn btn2 btn-sm"
-                        onClick={() => toggleStatus(s.id)}
+                        onClick={() => toggleStatus(s)}
                       >
-                        {s.status === "Active" ? "Hide" : "Show"}
+                        {s.status === "active" ? "Hide" : "Show"}
                       </button>
                       <button
                         className="btn btn2 btn-sm"
@@ -166,12 +216,6 @@ function ProviderServices() {
         <h2 style={{ fontSize: 20 }}>
           {editingId ? "Edit service" : "Add a new service"}
         </h2>
-
-        {error && (
-          <p className="b x" style={{ marginTop: 14 }}>
-            {error}
-          </p>
-        )}
 
         <label htmlFor="name">Service name</label>
         <input
@@ -218,9 +262,25 @@ function ProviderServices() {
           type="submit"
           className="btn"
           style={{ display: "block", width: "100%", marginTop: 20 }}
+          disabled={saving}
         >
-          {editingId ? "Update service" : "Save service"}
+          {saving
+            ? "Saving..."
+            : editingId
+            ? "Update service"
+            : "Save service"}
         </button>
+
+        {editingId && (
+          <button
+            type="button"
+            className="btn btn2"
+            style={{ display: "block", width: "100%", marginTop: 10 }}
+            onClick={resetForm}
+          >
+            Cancel editing
+          </button>
+        )}
       </form>
     </div>
   );
