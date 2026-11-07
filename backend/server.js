@@ -6,6 +6,8 @@ import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import providerRoutes from "./routes/providers.js";
 import serviceRoutes from "./routes/services.js";
+import bookingRoutes from "./routes/bookings.js";
+import reviewRoutes from "./routes/reviews.js";
 
 dotenv.config();
 
@@ -17,6 +19,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/providers", providerRoutes);
 app.use("/api/services", serviceRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 // A simple route to check that the server is running
 app.get("/api/health", (req, res) => {

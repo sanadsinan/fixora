@@ -1,60 +1,82 @@
-import { useState } from "react";
-import { initialRequests } from "../data/requests";
+import { useEffect, useState } from "react";
+import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
+import { formatDate, formatTime } from "../utils/format";
 import "./ProviderPages.css";
 
-// The data uses one set of words, and this page shows friendlier ones
+// The server uses lowercase words, and this page shows friendlier ones
 const label = {
-  Pending: "New",
-  Confirmed: "Accepted",
-  Completed: "Completed",
-  Cancelled: "Rejected",
+  pending: "New",
+  confirmed: "Accepted",
+  completed: "Completed",
+  cancelled: "Cancelled",
 };
 
 const badgeClass = {
-  New: "b w",
-  Accepted: "b ok",
-  Completed: "b ok",
-  Rejected: "b x",
+  pending: "b w",
+  confirmed: "b ok",
+  completed: "b ok",
+  cancelled: "b x",
 };
 
-const tabs = ["New", "Accepted", "Completed", "Rejected"];
+const tabs = ["New", "Accepted", "Completed", "Cancelled"];
 
 function ProviderRequests() {
-  const [requests, setRequests] = useState(initialRequests);
-  const [tab, setTab] = useState("New");
+  const { token } = useAuth();
 
-  const updateStatus = (id, newStatus) => {
-    setRequests(
-      requests.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
-    );
+  const [requests, setRequests] = useState([]);
+  const [tab, setTab] = useState("New");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Load the bookings made with me
+  useEffect(() => {
+    api("/api/bookings/requests", { token })
+      .then(setRequests)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const updateStatus = async (id, status) => {
+    try {
+      const updated = await api(`/api/bookings/${id}/status`, {
+        method: "PATCH",
+        token,
+        body: { status },
+      });
+      setRequests(requests.map((r) => (r.id === id ? updated : r)));
+      setError("");
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const visible = requests.filter((r) => label[r.status] === tab);
 
   const renderAction = (r) => {
-    if (r.status === "Pending") {
+    if (r.status === "pending") {
       return (
         <div className="action-group">
           <button
             className="btn btn-sm"
-            onClick={() => updateStatus(r.id, "Confirmed")}
+            onClick={() => updateStatus(r.id, "confirmed")}
           >
             Accept
           </button>
           <button
             className="btn btn2 btn-sm"
-            onClick={() => updateStatus(r.id, "Cancelled")}
+            onClick={() => updateStatus(r.id, "cancelled")}
           >
             Reject
           </button>
         </div>
       );
     }
-    if (r.status === "Confirmed") {
+    if (r.status === "confirmed") {
       return (
         <button
           className="btn btn-sm"
-          onClick={() => updateStatus(r.id, "Completed")}
+          onClick={() => updateStatus(r.id, "completed")}
         >
           Mark completed
         </button>
@@ -81,6 +103,12 @@ function ProviderRequests() {
         ))}
       </div>
 
+      {error && (
+        <p className="b x" style={{ marginTop: 16 }}>
+          {error}
+        </p>
+      )}
+
       <div className="card tw" style={{ marginTop: 20 }}>
         <table>
           <thead>
@@ -94,17 +122,23 @@ function ProviderRequests() {
             </tr>
           </thead>
           <tbody>
-            {visible.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan="6" style={{ textAlign: "center", color: "#475569" }}>
+                  Loading requests...
+                </td>
+              </tr>
+            ) : visible.length > 0 ? (
               visible.map((r) => (
                 <tr key={r.id}>
                   <td>{r.customer}</td>
                   <td>{r.service}</td>
-                  <td>{r.when}</td>
+                  <td>
+                    {formatDate(r.date)}, {formatTime(r.time)}
+                  </td>
                   <td>{r.address}</td>
                   <td>
-                    <span className={badgeClass[label[r.status]]}>
-                      {label[r.status]}
-                    </span>
+                    <span className={badgeClass[r.status]}>{label[r.status]}</span>
                   </td>
                   <td>{renderAction(r)}</td>
                 </tr>

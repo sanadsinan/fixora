@@ -1,29 +1,64 @@
-import { useState } from "react";
-import { initialRequests } from "../data/requests";
+import { useEffect, useState } from "react";
+import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
+import { formatDate, formatTime } from "../utils/format";
 
 function ProviderDashboard() {
-  const [requests, setRequests] = useState(initialRequests);
+  const { token } = useAuth();
 
-  // Change the status of one request
-  const updateStatus = (id, newStatus) => {
-    setRequests(
-      requests.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
-    );
+  const [requests, setRequests] = useState([]);
+  const [rating, setRating] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Load my bookings and my rating from the server
+  useEffect(() => {
+    Promise.all([
+      api("/api/bookings/requests", { token }),
+      api("/api/providers/me", { token }),
+    ])
+      .then(([bookingData, profile]) => {
+        setRequests(bookingData);
+        setRating(profile.rating);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const updateStatus = async (id, status) => {
+    try {
+      const updated = await api(`/api/bookings/${id}/status`, {
+        method: "PATCH",
+        token,
+        body: { status },
+      });
+      setRequests(requests.map((r) => (r.id === id ? updated : r)));
+      setError("");
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   // The numbers in the cards are worked out from the list
-  const newRequests = requests.filter((r) => r.status === "Pending").length;
-  const completedJobs = requests.filter((r) => r.status === "Completed").length;
-  const averageRating = 4.8; // dummy value for now
+  const newRequests = requests.filter((r) => r.status === "pending").length;
+  const completedJobs = requests.filter((r) => r.status === "completed").length;
 
   // The table only shows requests that still need action
   const openRequests = requests.filter(
-    (r) => r.status === "Pending" || r.status === "Confirmed"
+    (r) => r.status === "pending" || r.status === "confirmed"
   );
+
+  if (loading) return <p className="m">Loading your dashboard...</p>;
 
   return (
     <div>
       <h1 style={{ fontSize: 26 }}>Provider dashboard</h1>
+
+      {error && (
+        <p className="b x" style={{ marginTop: 16 }}>
+          {error}
+        </p>
+      )}
 
       {/* Summary cards */}
       <div className="grid" style={{ marginTop: 20 }}>
@@ -37,7 +72,7 @@ function ProviderDashboard() {
         </div>
         <div className="card stat">
           <p className="m">Average rating</p>
-          <h2>★ {averageRating}</h2>
+          <h2>★ {rating ?? "–"}</h2>
         </div>
       </div>
 
@@ -60,19 +95,21 @@ function ProviderDashboard() {
                 <tr key={r.id}>
                   <td>{r.customer}</td>
                   <td>{r.service}</td>
-                  <td>{r.when}</td>
                   <td>
-                    {r.status === "Pending" ? (
+                    {formatDate(r.date)}, {formatTime(r.time)}
+                  </td>
+                  <td>
+                    {r.status === "pending" ? (
                       <div className="action-group">
                         <button
                           className="btn btn-sm"
-                          onClick={() => updateStatus(r.id, "Confirmed")}
+                          onClick={() => updateStatus(r.id, "confirmed")}
                         >
                           Accept
                         </button>
                         <button
                           className="btn btn2 btn-sm"
-                          onClick={() => updateStatus(r.id, "Cancelled")}
+                          onClick={() => updateStatus(r.id, "cancelled")}
                         >
                           Reject
                         </button>
@@ -80,7 +117,7 @@ function ProviderDashboard() {
                     ) : (
                       <button
                         className="btn btn-sm"
-                        onClick={() => updateStatus(r.id, "Completed")}
+                        onClick={() => updateStatus(r.id, "completed")}
                       >
                         Mark completed
                       </button>

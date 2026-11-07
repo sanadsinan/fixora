@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 // Where each type of account goes after logging in
@@ -8,6 +8,7 @@ import { useAuth } from "../context/AuthContext";
 function Login() {
   const { login, logout } = useAuth();
   const navigate = useNavigate();
+  const from = useLocation().state?.from; // the page that sent us to log in
 
   const [role, setRole] = useState("customer");
   const [email, setEmail] = useState("");
@@ -45,8 +46,9 @@ function Login() {
         }
       }
 
-      if (user.role === "admin") navigate("/admin");
-      else navigate(role === "provider" ? "/provider" : "/");
+    if (user.role === "admin") navigate("/admin");
+    else if (role === "provider") navigate("/provider");
+    else navigate(from || "/");
     } catch (err) {
       setError(err.message);
     } finally {

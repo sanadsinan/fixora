@@ -1,21 +1,42 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { initialBookings } from "../data/bookings";
+import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
+import { formatDate, formatTime } from "../utils/format";
 import "./ExtraPages.css";
 
 function WriteReview() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { token } = useAuth();
 
-  const booking = initialBookings.find((b) => b.id === Number(id));
+  const [booking, setBooking] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Only completed bookings can be reviewed
-  if (!booking || booking.status !== "Completed") {
+  // Find this booking among my bookings
+  useEffect(() => {
+    api("/api/bookings/mine", { token })
+      .then((list) => setBooking(list.find((b) => b.id === Number(id)) || null))
+      .catch(() => setBooking(null))
+      .finally(() => setLoading(false));
+  }, [id, token]);
+
+  if (loading) {
+    return (
+      <div className="wrap">
+        <p className="m">Loading...</p>
+      </div>
+    );
+  }
+
+  // Only completed bookings that are not reviewed yet can be reviewed
+  if (!booking || booking.status !== "completed" || booking.reviewed) {
     return (
       <div className="wrap">
         <div
@@ -24,7 +45,9 @@ function WriteReview() {
         >
           <h2 style={{ fontSize: 26 }}>Review not available</h2>
           <p className="m" style={{ marginTop: 8 }}>
-            You can only review a booking after it is completed.
+            {booking?.reviewed
+              ? "You have already reviewed this booking."
+              : "You can only review a booking after it is completed."}
           </p>
           <Link
             className="btn"
@@ -38,7 +61,7 @@ function WriteReview() {
     );
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (rating === 0) {
@@ -47,9 +70,20 @@ function WriteReview() {
     }
 
     setError("");
-    setSubmitted(true);
-    console.log("Review data:", { bookingId: booking.id, rating, comment });
-    // Later we will send this to the backend
+    setSaving(true);
+
+    try {
+      await api("/api/reviews", {
+        method: "POST",
+        token,
+        body: { bookingId: booking.id, rating, comment },
+      });
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (submitted) {
@@ -88,7 +122,7 @@ function WriteReview() {
         <div className="review-summary">
           <b>{booking.service}</b>
           <p className="m" style={{ marginTop: 4 }}>
-            {booking.provider} · {booking.when}
+            {booking.provider} · {formatDate(booking.date)}, {formatTime(booking.time)}
           </p>
         </div>
 
@@ -125,8 +159,13 @@ function WriteReview() {
         />
 
         <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-          <button type="submit" className="btn" style={{ flex: 1 }}>
-            Submit review
+          <button
+            type="submit"
+            className="btn"
+            style={{ flex: 1 }}
+            disabled={saving}
+          >
+            {saving ? "Submitting..." : "Submit review"}
           </button>
           <button
             type="button"

@@ -1,25 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
 import ProviderAvatar from "../components/ProviderAvatar";
 import ServiceIllustration from "../components/ServiceIllustration";
+import { formatDate, formatTime } from "../utils/format";
 import "./ServiceDetail.css";
-
-// Turns "2026-10-28" into "28 Oct 2026"
-const formatDate = (iso) =>
-  new Date(iso).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
 
 function ServiceDetail() {
   // Reads the :id part of the address, e.g. /services/3 gives id = "3"
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, token } = useAuth();
 
   const [provider, setProvider] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [serviceId, setServiceId] = useState("");
 
   const [booking, setBooking] = useState({
     date: "",
@@ -28,6 +24,7 @@ function ServiceDetail() {
     notes: "",
   });
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -35,7 +32,10 @@ function ServiceDetail() {
   useEffect(() => {
     setLoading(true);
     api(`/api/providers/${id}`)
-      .then(setProvider)
+      .then((data) => {
+        setProvider(data);
+        setServiceId(data.services[0] ? String(data.services[0].id) : "");
+      })
       .catch(() => setProvider(null))
       .finally(() => setLoading(false));
   }, [id]);
@@ -44,27 +44,55 @@ function ServiceDetail() {
     setBooking({ ...booking, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!booking.date || !booking.time || !booking.address) {
+    // Booking needs a login. After logging in, the user comes back here.
+    if (!user) {
+      navigate("/login", { state: { from: `/services/${id}` } });
+      return;
+    }
+    if (user.role !== "customer") {
+      setError("Please log in with a customer account to book a service.");
+      return;
+    }
+    if (!booking.date || !booking.time || !booking.address.trim()) {
       setError("Please choose a date, time and enter your address.");
       return;
     }
 
-    setError("");
-    console.log("Booking data:", { providerId: provider.id, ...booking });
-    // Saving the booking to the database comes in the next step
+    const selectedService = provider.services.find(
+      (s) => String(s.id) === serviceId
+    );
 
-    // Go to the confirmation page and pass the booking details along
-    navigate("/booking-confirmed", {
-      state: {
-        service: provider.service,
-        provider: provider.name,
-        when: `${formatDate(booking.date)}, ${booking.time}`,
-        address: booking.address,
-      },
-    });
+    setError("");
+    setSaving(true);
+
+    try {
+      await api("/api/bookings", {
+        method: "POST",
+        token,
+        body: {
+          providerId: provider.id,
+          serviceId: Number(serviceId),
+          ...booking,
+        },
+      });
+
+      // Go to the confirmation page and pass the booking details along
+      navigate("/booking-confirmed", {
+        state: {
+          service: selectedService.name,
+          provider: provider.name,
+          when: `${formatDate(booking.date)}, ${formatTime(booking.time)}`,
+          address: booking.address,
+        },
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -91,6 +119,7 @@ function ServiceDetail() {
   }
 
   const hasServices = provider.services.length > 0;
+  const selected = provider.services.find((s) => String(s.id) === serviceId);
 
   return (
     <div className="wrap">
@@ -125,7 +154,9 @@ function ServiceDetail() {
           {hasServices ? (
             provider.services.map((s) => (
               <div className="card review-card" key={s.id}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between", gap: 12 }}
+                >
                   <b>{s.name}</b>
                   <b>₹{s.price}</b>
                 </div>
@@ -164,15 +195,31 @@ function ServiceDetail() {
         <form className="card detail-booking" onSubmit={handleSubmit}>
           <h2 style={{ fontSize: 20 }}>Book this service</h2>
           <p className="m" style={{ marginTop: 4 }}>
-            {provider.price !== null
-              ? `Price: from ₹${provider.price}`
-              : "No prices listed yet"}
+            {selected ? `Price: ₹${selected.price}` : "No prices listed yet"}
           </p>
 
           {error && (
             <p className="b x" style={{ marginTop: 14 }}>
               {error}
             </p>
+          )}
+
+          {hasServices && (
+            <>
+              <label htmlFor="service">Service</label>
+              <select
+                id="service"
+                className="in"
+                value={serviceId}
+                onChange={(e) => setServiceId(e.target.value)}
+              >
+                {provider.services.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} · ₹{s.price}
+                  </option>
+                ))}
+              </select>
+            </>
           )}
 
           <label htmlFor="date">Date</label>
@@ -220,10 +267,16 @@ function ServiceDetail() {
             type="submit"
             className="btn"
             style={{ display: "block", width: "100%", marginTop: 20 }}
-            disabled={!hasServices}
+            disabled={!hasServices || saving}
           >
-            Confirm booking
+            {saving ? "Booking..." : "Confirm booking"}
           </button>
+
+          {!user && (
+            <p className="m" style={{ marginTop: 10, textAlign: "center" }}>
+              You will be asked to log in first.
+            </p>
+          )}
         </form>
       </div>
     </div>
