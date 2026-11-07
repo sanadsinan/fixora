@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
-import { categories } from "../data/providers";
 import "./Profile.css";
 import PhotoUpload from "../components/PhotoUpload";
+import useCategories from "../hooks/useCategories";
 
 const statusBadge = { pending: "b w", approved: "b ok", rejected: "b x" };
 const statusLabel = {
@@ -14,6 +14,7 @@ const statusLabel = {
 };
 
 function Profile() {
+  const categories = useCategories();
   const { user, token, updateUser } = useAuth();
 
   // ----- Personal details -----
@@ -31,7 +32,7 @@ function Profile() {
 
   // ----- Become a provider -----
   const [application, setApplication] = useState({
-    category: categories[0],
+    category: "",
     experience: "",
     area: "",
   });
@@ -119,7 +120,7 @@ function Profile() {
       await api("/api/providers/apply", {
         method: "POST",
         token,
-        body: application,
+        body: { ...application, category: application.category || categories[0] },
       });
       // The account is now a provider too, waiting for approval
       updateUser({ isProvider: true, approvalStatus: "pending" });
@@ -268,7 +269,7 @@ function Profile() {
                 id="category"
                 name="category"
                 className="in"
-                value={application.category}
+                value={application.category || categories[0] || ""}
                 onChange={handleApplicationChange}
               >
                 {categories.map((name) => (

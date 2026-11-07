@@ -42,6 +42,31 @@ app.get("/api/categories", async (req, res) => {
   }
 });
 
+// Public numbers for the About page
+app.get("/api/stats", async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT
+         (SELECT COUNT(*) FROM provider_profiles p
+            JOIN users u ON u.id = p.user_id
+            WHERE p.approval_status = 'approved' AND u.status = 'active') AS providers,
+         (SELECT COUNT(*) FROM categories) AS categories,
+         (SELECT COUNT(*) FROM bookings WHERE status = 'completed') AS completed,
+         (SELECT COUNT(*) FROM users WHERE role = 'customer') AS customers`
+    );
+    const r = rows[0];
+    res.json({
+      providers: Number(r.providers),
+      categories: Number(r.categories),
+      completed: Number(r.completed),
+      customers: Number(r.customers),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Database error" });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

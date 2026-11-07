@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "./Register.css";
+import useCategories from "../hooks/useCategories";
 
 function Register() {
   const { register } = useAuth();
@@ -9,13 +10,14 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState("customer");
   const [error, setError] = useState("");
+  const categories = useCategories();
   const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
     password: "",
     confirmPassword: "",
-    category: "Plumbing",
+    category: "",
     experience: "",
     area: "",
     about: "",
@@ -42,7 +44,11 @@ function Register() {
     setLoading(true);
 
     try {
-      const user = await register({ role, ...form });
+      const user = await register({
+        role,
+        ...form,
+        category: form.category || categories[0],
+      });
       navigate(user.role === "provider" ? "/provider" : "/");
     } catch (err) {
       setError(err.message);
@@ -159,12 +165,12 @@ function Register() {
               id="category"
               name="category"
               className="in"
-              value={form.category}
+              value={form.category || categories[0] || ""}
               onChange={handleChange}
             >
-              <option>Plumbing</option>
-              <option>Electrical</option>
-              <option>Cleaning</option>
+              {categories.map((name) => (
+                <option key={name}>{name}</option>
+              ))}
             </select>
 
             <label htmlFor="experience">Experience (years)</label>

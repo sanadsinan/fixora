@@ -4,6 +4,7 @@ import { api } from "../api";
 import ServiceIllustration from "../components/ServiceIllustration";
 import heroImg from "../assets/hero.svg";
 import "./Home.css";
+import useCategories from "../hooks/useCategories";
 
 const categories = [
   "Plumbing",
@@ -26,6 +27,7 @@ function Home() {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const categories = useCategories();
 
   // Load the top-rated providers from the server (the server sends them sorted)
   useEffect(() => {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
-import { categories } from "../data/providers";
+import useCategories from "../hooks/useCategories";
 import ProviderAvatar from "../components/ProviderAvatar";
 import ServiceIllustration, {
   illustrationOptions,
@@ -40,6 +40,7 @@ const statusLabel = {
 
 function ProviderProfile() {
   const { token, updateUser } = useAuth();
+  const categories = useCategories();
   const fileRef = useRef(null);
 
   const [profile, setProfile] = useState(null);

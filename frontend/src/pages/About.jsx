@@ -1,15 +1,10 @@
 import storyImg from "../assets/story.svg";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { providers, categories } from "../data/providers";
+import { api } from "../api";
 import "./About.css";
 
-// Numbers come from our data where possible. The last two are dummy values.
-const stats = [
-  { value: providers.length, label: "Verified providers" },
-  { value: categories.length, label: "Services offered" },
-  { value: "120+", label: "Completed bookings" },
-  { value: "200+", label: "Happy customers" },
-];
+
 
 const reasons = [
   {
@@ -33,6 +28,26 @@ const team = [
 ];
 
 function About() {
+    const [counts, setCounts] = useState({
+    providers: 0,
+    categories: 0,
+    completed: 0,
+    customers: 0,
+  });
+
+  // Real numbers from the database
+  useEffect(() => {
+    api("/api/stats")
+      .then(setCounts)
+      .catch(() => {});
+  }, []);
+
+  const stats = [
+    { value: counts.providers, label: "Verified providers" },
+    { value: counts.categories, label: "Service categories" },
+    { value: counts.completed, label: "Completed bookings" },
+    { value: counts.customers, label: "Registered customers" },
+  ];
   return (
     <div>
       {/* Hero */}
