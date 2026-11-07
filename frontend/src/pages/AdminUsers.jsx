@@ -1,87 +1,28 @@
 import { useState } from "react";
-import { initialUsers } from "../data/adminUsers";
+import useAdminUsers from "../hooks/useAdminUsers";
+import UserActions, { userBadge, userLabel } from "../components/UserActions";
 import "./AdminPages.css";
-
-const badgeClass = {
-  Active: "b ok",
-  Approved: "b ok",
-  Pending: "b w",
-  Blocked: "b x",
-  Rejected: "b x",
-};
 
 const tabs = ["All", "Customers", "Providers", "Pending approval"];
 
 function AdminUsers() {
-  const [users, setUsers] = useState(initialUsers);
+  const { users, loading, error, approve, reject, block, unblock } = useAdminUsers();
   const [tab, setTab] = useState("All");
   const [search, setSearch] = useState("");
-
-  const updateStatus = (id, newStatus) => {
-    setUsers(users.map((u) => (u.id === id ? { ...u, status: newStatus } : u)));
-  };
-
-  const handleBlock = (id) => {
-    if (window.confirm("Block this account?")) {
-      updateStatus(id, "Blocked");
-    }
-  };
-
-  // Unblocking returns customers to Active and providers to Approved
-  const handleUnblock = (u) => {
-    updateStatus(u.id, u.role === "Customer" ? "Active" : "Approved");
-  };
 
   const visible = users.filter((u) => {
     const matchesTab =
       tab === "All" ||
-      (tab === "Customers" && u.role === "Customer") ||
-      (tab === "Providers" && u.role === "Provider") ||
-      (tab === "Pending approval" && u.status === "Pending");
+      (tab === "Customers" && u.type === "Customer") ||
+      (tab === "Providers" && u.type === "Provider") ||
+      (tab === "Pending approval" && u.status === "pending");
 
     const text = search.toLowerCase();
     const matchesSearch =
-      u.name.toLowerCase().includes(text) ||
-      u.email.toLowerCase().includes(text);
+      u.name.toLowerCase().includes(text) || u.email.toLowerCase().includes(text);
 
     return matchesTab && matchesSearch;
   });
-
-  const renderActions = (u) => {
-    if (u.status === "Pending") {
-      return (
-        <div className="action-group">
-          <button
-            className="btn btn-sm"
-            onClick={() => updateStatus(u.id, "Approved")}
-          >
-            Approve
-          </button>
-          <button
-            className="btn btn2 btn-sm"
-            onClick={() => updateStatus(u.id, "Rejected")}
-          >
-            Reject
-          </button>
-        </div>
-      );
-    }
-    if (u.status === "Active" || u.status === "Approved") {
-      return (
-        <button className="btn btn2 btn-sm" onClick={() => handleBlock(u.id)}>
-          Block
-        </button>
-      );
-    }
-    if (u.status === "Blocked") {
-      return (
-        <button className="btn btn2 btn-sm" onClick={() => handleUnblock(u)}>
-          Unblock
-        </button>
-      );
-    }
-    return "–";
-  };
 
   return (
     <div>
@@ -109,6 +50,12 @@ function AdminUsers() {
         onChange={(e) => setSearch(e.target.value)}
       />
 
+      {error && (
+        <p className="b x" style={{ marginTop: 16 }}>
+          {error}
+        </p>
+      )}
+
       <div className="card tw" style={{ marginTop: 20 }}>
         <table>
           <thead>
@@ -121,16 +68,30 @@ function AdminUsers() {
             </tr>
           </thead>
           <tbody>
-            {visible.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan="5" style={{ textAlign: "center", color: "#475569" }}>
+                  Loading users...
+                </td>
+              </tr>
+            ) : visible.length > 0 ? (
               visible.map((u) => (
                 <tr key={u.id}>
                   <td>{u.name}</td>
                   <td>{u.email}</td>
-                  <td>{u.role}</td>
+                  <td>{u.type}</td>
                   <td>
-                    <span className={badgeClass[u.status]}>{u.status}</span>
+                    <span className={userBadge[u.status]}>{userLabel[u.status]}</span>
                   </td>
-                  <td>{renderActions(u)}</td>
+                  <td>
+                    <UserActions
+                      user={u}
+                      approve={approve}
+                      reject={reject}
+                      block={block}
+                      unblock={unblock}
+                    />
+                  </td>
                 </tr>
               ))
             ) : (

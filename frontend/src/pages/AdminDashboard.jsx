@@ -1,87 +1,55 @@
-import { useState } from "react";
-import {
-  initialProviders,
-  customerCount,
-  bookingCount,
-} from "../data/adminData";
-
-// Which badge color to use for each status
-const badgeClass = {
-  Pending: "b w",
-  Approved: "b ok",
-  Blocked: "b x",
-};
+import { useEffect, useState } from "react";
+import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
+import useAdminUsers from "../hooks/useAdminUsers";
+import UserActions, { userBadge, userLabel } from "../components/UserActions";
 
 function AdminDashboard() {
-  const [providers, setProviders] = useState(initialProviders);
+  const { token } = useAuth();
+  const { users, loading, error, approve, reject, block, unblock } = useAdminUsers();
+  const [bookingCount, setBookingCount] = useState(0);
 
-  const updateStatus = (id, newStatus) => {
-    setProviders(
-      providers.map((p) => (p.id === id ? { ...p, status: newStatus } : p))
-    );
-  };
+  useEffect(() => {
+    api("/api/admin/stats", { token })
+      .then((s) => setBookingCount(s.bookings))
+      .catch(() => {});
+  }, [token]);
 
-  const handleBlock = (id) => {
-    if (window.confirm("Block this provider?")) {
-      updateStatus(id, "Blocked");
-    }
-  };
+  // Numbers worked out from the list, so they change when you approve or block
+  const providers = users.filter((u) => u.type === "Provider");
+  const approvedCount = providers.filter((u) => u.status === "approved").length;
+  const pendingCount = providers.filter((u) => u.status === "pending").length;
 
-  // The numbers in the cards are worked out from the list
-  const totalUsers = customerCount + providers.length;
-  const approvedProviders = providers.filter(
-    (p) => p.status === "Approved"
-  ).length;
+  // Pending applications first
+  const sorted = [...providers].sort(
+    (a, b) => (b.status === "pending") - (a.status === "pending")
+  );
 
-  // Decides which buttons to show for each status
-  const renderActions = (p) => {
-    if (p.status === "Pending") {
-      return (
-        <div className="action-group">
-          <button
-            className="btn btn-sm"
-            onClick={() => updateStatus(p.id, "Approved")}
-          >
-            Approve
-          </button>
-          <button className="btn btn2 btn-sm" onClick={() => handleBlock(p.id)}>
-            Block
-          </button>
-        </div>
-      );
-    }
-
-    if (p.status === "Approved") {
-      return (
-        <button className="btn btn2 btn-sm" onClick={() => handleBlock(p.id)}>
-          Block
-        </button>
-      );
-    }
-
-    return (
-      <button
-        className="btn btn-sm"
-        onClick={() => updateStatus(p.id, "Approved")}
-      >
-        Unblock
-      </button>
-    );
-  };
+  if (loading) return <p className="m">Loading the dashboard...</p>;
 
   return (
     <div>
       <h1 style={{ fontSize: 26 }}>Admin dashboard</h1>
 
+      {error && (
+        <p className="b x" style={{ marginTop: 16 }}>
+          {error}
+        </p>
+      )}
+
       {/* Summary cards */}
       <div className="grid" style={{ marginTop: 20 }}>
         <div className="card stat">
           <p className="m">Total users</p>
-          <h2>{totalUsers}</h2>
+          <h2>{users.length}</h2>
         </div>
         <div className="card stat">
           <p className="m">Approved providers</p>
-          <h2>{approvedProviders}</h2>
+          <h2>{approvedCount}</h2>
+        </div>
+        <div className="card stat">
+          <p className="m">Waiting for approval</p>
+          <h2>{pendingCount}</h2>
         </div>
         <div className="card stat">
           <p className="m">Bookings</p>
@@ -103,16 +71,32 @@ function AdminDashboard() {
             </tr>
           </thead>
           <tbody>
-            {providers.map((p) => (
-              <tr key={p.id}>
-                <td>{p.name}</td>
-                <td>{p.service}</td>
-                <td>
-                  <span className={badgeClass[p.status]}>{p.status}</span>
+            {sorted.length > 0 ? (
+              sorted.map((u) => (
+                <tr key={u.id}>
+                  <td>{u.name}</td>
+                  <td>{u.category}</td>
+                  <td>
+                    <span className={userBadge[u.status]}>{userLabel[u.status]}</span>
+                  </td>
+                  <td>
+                    <UserActions
+                      user={u}
+                      approve={approve}
+                      reject={reject}
+                      block={block}
+                      unblock={unblock}
+                    />
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" style={{ textAlign: "center", color: "#475569" }}>
+                  No provider applications yet.
                 </td>
-                <td>{renderActions(p)}</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

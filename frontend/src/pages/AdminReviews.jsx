@@ -1,19 +1,31 @@
-import { useState } from "react";
-import { providers, reviews as initialReviews } from "../data/providers";
+import { useEffect, useState } from "react";
+import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
 import "./AdminPages.css";
 
-// Finds the provider's name from the id stored in each review
-const providerName = (id) => {
-  const provider = providers.find((p) => p.id === id);
-  return provider ? provider.name : "Unknown";
-};
-
 function AdminReviews() {
-  const [reviews, setReviews] = useState(initialReviews);
+  const { token } = useAuth();
 
-  const handleDelete = (id) => {
-    if (window.confirm("Delete this review?")) {
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api("/api/admin/reviews", { token })
+      .then(setReviews)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this review?")) return;
+
+    try {
+      await api(`/api/admin/reviews/${id}`, { method: "DELETE", token });
       setReviews(reviews.filter((r) => r.id !== id));
+      setError("");
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -22,6 +34,12 @@ function AdminReviews() {
       <div className="page-head">
         <h1 style={{ fontSize: 26 }}>Reviews</h1>
       </div>
+
+      {error && (
+        <p className="b x" style={{ marginTop: 16 }}>
+          {error}
+        </p>
+      )}
 
       <div className="card tw" style={{ marginTop: 20 }}>
         <table>
@@ -35,11 +53,17 @@ function AdminReviews() {
             </tr>
           </thead>
           <tbody>
-            {reviews.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan="5" style={{ textAlign: "center", color: "#475569" }}>
+                  Loading reviews...
+                </td>
+              </tr>
+            ) : reviews.length > 0 ? (
               reviews.map((r) => (
                 <tr key={r.id}>
                   <td>{r.customer}</td>
-                  <td>{providerName(r.providerId)}</td>
+                  <td>{r.provider}</td>
                   <td>★ {r.rating}</td>
                   <td>{r.comment}</td>
                   <td>

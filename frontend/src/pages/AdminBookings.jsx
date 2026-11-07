@@ -1,26 +1,31 @@
-import { useState } from "react";
-import { initialAdminBookings } from "../data/adminBookings";
+import { useEffect, useState } from "react";
+import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
+import { formatDate } from "../utils/format";
 import "./AdminPages.css";
 
+const label = {
+  pending: "Pending",
+  confirmed: "Confirmed",
+  completed: "Completed",
+  cancelled: "Cancelled",
+};
+
 const badgeClass = {
-  Pending: "b w",
-  Confirmed: "b ok",
-  Completed: "b ok",
-  Cancelled: "b x",
+  pending: "b w",
+  confirmed: "b ok",
+  completed: "b ok",
+  cancelled: "b x",
 };
 
 const statuses = ["All statuses", "Pending", "Confirmed", "Completed", "Cancelled"];
 
-// Turns "2026-10-28" into "28 Oct 2026"
-const formatDate = (iso) =>
-  new Date(iso).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
 function AdminBookings() {
-  const bookings = initialAdminBookings;
+  const { token } = useAuth();
+
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // What is typed in the boxes
   const [status, setStatus] = useState("All statuses");
@@ -28,6 +33,13 @@ function AdminBookings() {
 
   // What was applied when the Filter button was clicked
   const [applied, setApplied] = useState({ status: "All statuses", date: "" });
+
+  useEffect(() => {
+    api("/api/admin/bookings", { token })
+      .then(setBookings)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [token]);
 
   const handleFilter = () => setApplied({ status, date });
 
@@ -39,7 +51,7 @@ function AdminBookings() {
 
   const visible = bookings.filter(
     (b) =>
-      (applied.status === "All statuses" || b.status === applied.status) &&
+      (applied.status === "All statuses" || label[b.status] === applied.status) &&
       (!applied.date || b.date === applied.date)
   );
 
@@ -77,6 +89,12 @@ function AdminBookings() {
         </button>
       </div>
 
+      {error && (
+        <p className="b x" style={{ marginTop: 16 }}>
+          {error}
+        </p>
+      )}
+
       <div className="card tw" style={{ marginTop: 20 }}>
         <table>
           <thead>
@@ -90,7 +108,13 @@ function AdminBookings() {
             </tr>
           </thead>
           <tbody>
-            {visible.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan="6" style={{ textAlign: "center", color: "#475569" }}>
+                  Loading bookings...
+                </td>
+              </tr>
+            ) : visible.length > 0 ? (
               visible.map((b) => (
                 <tr key={b.id}>
                   <td>{b.id}</td>
@@ -99,7 +123,7 @@ function AdminBookings() {
                   <td>{b.service}</td>
                   <td>{formatDate(b.date)}</td>
                   <td>
-                    <span className={badgeClass[b.status]}>{b.status}</span>
+                    <span className={badgeClass[b.status]}>{label[b.status]}</span>
                   </td>
                 </tr>
               ))

@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import pool from "../db.js";
 
 // Runs before a protected route: checks the token and finds out who is asking
-export function requireAuth(req, res, next) {
+export async function requireAuth(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
 
@@ -10,11 +10,30 @@ export function requireAuth(req, res, next) {
     return res.status(401).json({ message: "Please log in." });
   }
 
+  let payload;
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
-    next();
+    payload = jwt.verify(token, process.env.JWT_SECRET);
   } catch {
-    res.status(401).json({ message: "Session expired. Please log in again." });
+    return res.status(401).json({ message: "Session expired. Please log in again." });
+  }
+
+  try {
+    // Check that the account still exists and is not blocked
+    const [rows] = await pool.query("SELECT status FROM users WHERE id = ?", [
+      payload.id,
+    ]);
+    if (rows.length === 0) {
+      return res.status(401).json({ message: "Please log in again." });
+    }
+    if (rows[0].status === "blocked") {
+      return res.status(403).json({ message: "Your account has been blocked." });
+    }
+
+    req.user = payload;
+    next();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
   }
 }
 

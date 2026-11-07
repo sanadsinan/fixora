@@ -1,19 +1,26 @@
-import { useState } from "react";
-import { providers } from "../data/providers";
-import { initialCategories } from "../data/adminCategories";
+import { useEffect, useState } from "react";
+import { api } from "../api";
+import { useAuth } from "../context/AuthContext";
 import "./AdminPages.css";
 
 const emptyForm = { name: "", description: "" };
 
 function AdminCategories() {
-  const [categories, setCategories] = useState(initialCategories);
+  const { token } = useAuth();
+
+  const [categories, setCategories] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // How many providers offer this category (worked out from the providers list)
-  const providerCount = (name) =>
-    providers.filter((p) => p.service === name).length;
+  useEffect(() => {
+    api("/api/admin/categories", { token })
+      .then(setCategories)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [token]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -31,53 +38,55 @@ function AdminCategories() {
     setError("");
   };
 
-  const handleDelete = (c) => {
-    const count = providerCount(c.name);
-    const message =
-      count > 0
-        ? `${count} provider(s) offer ${c.name}. Delete it anyway?`
-        : `Delete the ${c.name} category?`;
+  const handleDelete = async (c) => {
+    if (!window.confirm(`Delete the ${c.name} category?`)) return;
 
-    if (!window.confirm(message)) return;
-
-    setCategories(categories.filter((x) => x.id !== c.id));
-    if (editingId === c.id) handleCancelEdit();
+    try {
+      await api(`/api/admin/categories/${c.id}`, { method: "DELETE", token });
+      setCategories(categories.filter((x) => x.id !== c.id));
+      if (editingId === c.id) handleCancelEdit();
+      setError("");
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const name = form.name.trim();
-    if (!name) {
+    if (!form.name.trim()) {
       setError("Please enter a category name.");
       return;
     }
 
-    const duplicate = categories.some(
-      (c) => c.name.toLowerCase() === name.toLowerCase() && c.id !== editingId
-    );
-    if (duplicate) {
-      setError("This category already exists.");
-      return;
-    }
-
-    if (editingId) {
-      setCategories(
-        categories.map((c) =>
-          c.id === editingId ? { ...c, name, description: form.description } : c
-        )
-      );
-    } else {
-      // Date.now() is a temporary id. The database gives real ids later.
-      setCategories([
-        ...categories,
-        { id: Date.now(), name, description: form.description },
-      ]);
-    }
-
     setError("");
-    setEditingId(null);
-    setForm(emptyForm);
+    setSaving(true);
+
+    try {
+      if (editingId) {
+        const updated = await api(`/api/admin/categories/${editingId}`, {
+          method: "PUT",
+          token,
+          body: form,
+        });
+        setCategories(categories.map((c) => (c.id === editingId ? updated : c)));
+      } else {
+        const created = await api("/api/admin/categories", {
+          method: "POST",
+          token,
+          body: form,
+        });
+        setCategories(
+          [...categories, created].sort((a, b) => a.name.localeCompare(b.name))
+        );
+      }
+      setEditingId(null);
+      setForm(emptyForm);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -97,11 +106,17 @@ function AdminCategories() {
               </tr>
             </thead>
             <tbody>
-              {categories.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="3" style={{ textAlign: "center", color: "#475569" }}>
+                    Loading categories...
+                  </td>
+                </tr>
+              ) : categories.length > 0 ? (
                 categories.map((c) => (
                   <tr key={c.id}>
                     <td>{c.name}</td>
-                    <td>{providerCount(c.name)}</td>
+                    <td>{c.providerCount}</td>
                     <td>
                       <div className="action-group">
                         <button
@@ -166,8 +181,9 @@ function AdminCategories() {
           type="submit"
           className="btn"
           style={{ display: "block", width: "100%", marginTop: 20 }}
+          disabled={saving}
         >
-          {editingId ? "Update category" : "Add category"}
+          {saving ? "Saving..." : editingId ? "Update category" : "Add category"}
         </button>
 
         {editingId && (

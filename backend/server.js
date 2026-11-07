@@ -8,6 +8,7 @@ import providerRoutes from "./routes/providers.js";
 import serviceRoutes from "./routes/services.js";
 import bookingRoutes from "./routes/bookings.js";
 import reviewRoutes from "./routes/reviews.js";
+import adminRoutes from "./routes/admin.js";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use("/api/providers", providerRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/admin", adminRoutes);
 
 // A simple route to check that the server is running
 app.get("/api/health", (req, res) => {
